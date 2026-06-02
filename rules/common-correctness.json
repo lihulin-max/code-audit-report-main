@@ -1,0 +1,22 @@
+[
+  {
+    "ruleId": "COR-STATE-TRANSITION",
+    "languages": ["all"],
+    "severity": "中",
+    "dimension": "功能正确性",
+    "standards": ["Domain-driven design", "Google engineering practices"],
+    "detection": ["manual", "heuristic", "tests"],
+    "evidenceRequired": ["状态定义", "状态迁移条件", "异常分支", "测试覆盖"],
+    "recommendation": "核心业务状态必须有显式状态机或清晰的迁移约束；异常分支、回退路径和边界输入需要测试覆盖。"
+  },
+  {
+    "ruleId": "COR-DEFAULT-FALLBACK",
+    "languages": ["all"],
+    "severity": "中",
+    "dimension": "功能正确性",
+    "standards": ["Fail-safe defaults", "Defensive programming"],
+    "detection": ["manual", "heuristic"],
+    "evidenceRequired": ["默认值来源", "触发条件", "业务影响", "日志和告警"],
+    "recommendation": "默认值和 fallback 必须证明业务安全；未知输入优先进入 unknown/error 状态，而不是假设为正常业务值。"
+  }
+]

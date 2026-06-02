@@ -1,0 +1,32 @@
+[
+  {
+    "ruleId": "CPP-OWNERSHIP-RAII",
+    "languages": ["C++"],
+    "severity": "中",
+    "dimension": "编码规范性",
+    "standards": ["Google C++ Style Guide", "C++ Core Guidelines R.*"],
+    "detection": ["clang-tidy", "cppcheck", "manual"],
+    "evidenceRequired": ["资源获取点", "释放路径", "异常路径"],
+    "recommendation": "使用 RAII 类型表达所有权；避免裸 new/delete 管理资源；异常路径也必须释放资源。"
+  },
+  {
+    "ruleId": "CPP-CONCURRENCY-SAFETY",
+    "languages": ["C++"],
+    "severity": "中",
+    "dimension": "可靠性/健壮性",
+    "standards": ["C++ Core Guidelines CP.*"],
+    "detection": ["clang-tidy", "manual"],
+    "evidenceRequired": ["共享状态", "访问线程", "同步原语"],
+    "recommendation": "共享状态必须明确所有权和同步策略；优先使用 strand、mutex、atomic 或不可变消息。"
+  },
+  {
+    "ruleId": "CPP-ERROR-HANDLING",
+    "languages": ["C++"],
+    "severity": "中",
+    "dimension": "可靠性/健壮性",
+    "standards": ["Google C++ Style Guide", "C++ Core Guidelines E.*"],
+    "detection": ["clang-tidy", "manual"],
+    "evidenceRequired": ["异常捕获点", "日志", "恢复动作"],
+    "recommendation": "捕获具体异常，记录上下文；不要吞掉异常；错误应进入明确的恢复或失败状态。"
+  }
+]

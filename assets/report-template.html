@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{TITLE}}</title>
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --panel: #ffffff;
+      --text: #1f2933;
+      --muted: #667085;
+      --line: #d9dee7;
+      --high: #b42318;
+      --medium: #b54708;
+      --low: #175cd3;
+      --review: #475467;
+      --ok: #067647;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Microsoft YaHei", "Segoe UI", Arial, sans-serif;
+      line-height: 1.6;
+    }
+    .page {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 32px 24px 56px;
+    }
+    header {
+      border-bottom: 3px solid #2f5f8f;
+      padding-bottom: 18px;
+      margin-bottom: 24px;
+    }
+    h1 { margin: 0 0 8px; font-size: 30px; }
+    h2 { margin: 32px 0 14px; font-size: 21px; }
+    h3 { margin: 20px 0 10px; font-size: 17px; }
+    .meta { color: var(--muted); font-size: 14px; }
+    .toc {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 16px 0 24px;
+    }
+    .toc a {
+      color: #255a88;
+      background: #e8eef5;
+      border: 1px solid #c9d5e4;
+      border-radius: 4px;
+      padding: 5px 9px;
+      font-size: 13px;
+      text-decoration: none;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin: 18px 0 8px;
+    }
+    .card, section {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 16px;
+    }
+    .metric { color: var(--muted); font-size: 13px; }
+    .value { font-size: 26px; font-weight: 700; margin-top: 4px; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    th, td {
+      border-bottom: 1px solid var(--line);
+      padding: 10px 12px;
+      text-align: left;
+      vertical-align: top;
+      font-size: 14px;
+    }
+    th { background: #eef2f6; font-weight: 700; }
+    tr:last-child td { border-bottom: 0; }
+    .badge {
+      display: inline-block;
+      min-width: 48px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      color: #fff;
+      font-size: 12px;
+      text-align: center;
+      white-space: nowrap;
+    }
+    .high { background: var(--high); }
+    .medium { background: var(--medium); }
+    .low { background: var(--low); }
+    .review { background: var(--review); }
+    .ok { background: var(--ok); }
+    .finding-controls {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 20px 0 4px;
+    }
+    .finding-controls input,
+    .finding-controls select {
+      background: #ffffff;
+      border: 1px solid #c9d5e4;
+      border-radius: 4px;
+      color: var(--text);
+      font: inherit;
+      font-size: 13px;
+      min-height: 32px;
+      padding: 5px 9px;
+    }
+    .finding-controls input {
+      flex: 1 1 260px;
+      min-width: 220px;
+    }
+    .finding-controls button {
+      background: #ffffff;
+      border: 1px solid #c9d5e4;
+      border-radius: 4px;
+      color: #255a88;
+      cursor: pointer;
+      font: inherit;
+      font-size: 13px;
+      min-height: 32px;
+      padding: 5px 10px;
+    }
+    .finding-controls button:hover {
+      background: #e8eef5;
+    }
+    .filter-count {
+      color: var(--muted);
+      font-size: 13px;
+      margin-left: auto;
+      white-space: nowrap;
+    }
+    details.finding {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-left: 4px solid var(--line);
+      border-radius: 6px;
+      margin: 12px 0;
+      overflow: hidden;
+    }
+    .finding.high-border { border-left-color: var(--high); }
+    .finding.medium-border { border-left-color: var(--medium); }
+    .finding.low-border { border-left-color: var(--low); }
+    .finding.review-border { border-left-color: var(--review); }
+    .finding-summary {
+      align-items: center;
+      cursor: pointer;
+      display: flex;
+      gap: 12px;
+      justify-content: space-between;
+      list-style: none;
+      padding: 14px 16px;
+    }
+    .finding-summary::-webkit-details-marker { display: none; }
+    .finding-summary-main {
+      display: block;
+      min-width: 0;
+    }
+    .finding[open] .finding-summary {
+      background: #f8fafc;
+      border-bottom: 1px solid var(--line);
+    }
+    .summary-indicator::before {
+      color: var(--muted);
+      content: "展开";
+      font-size: 13px;
+      white-space: nowrap;
+    }
+    .finding[open] .summary-indicator::before {
+      content: "收起";
+    }
+    .finding-body {
+      padding: 12px 16px 16px;
+    }
+    .finding-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+    .finding-title strong { font-size: 16px; }
+    .tagline {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin: 10px 0;
+    }
+    .tag {
+      display: inline-block;
+      background: #eef2f6;
+      border: 1px solid #d0d5dd;
+      border-radius: 4px;
+      color: #344054;
+      font-size: 12px;
+      padding: 2px 7px;
+    }
+    .location {
+      color: #344054;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 13px;
+      overflow-wrap: anywhere;
+    }
+    .label {
+      margin-top: 10px;
+      font-weight: 700;
+      color: #344054;
+    }
+    pre {
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      background: #f2f4f7;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      padding: 10px;
+      margin: 8px 0 0;
+      font-size: 13px;
+    }
+    .evidence {
+      background: #fff8f0;
+    }
+    .kv {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+    .kv div {
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      padding: 10px;
+    }
+    .kv strong {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 3px;
+    }
+    .kv span {
+      font-size: 20px;
+      font-weight: 700;
+    }
+    code {
+      font-family: Consolas, "Courier New", monospace;
+      overflow-wrap: anywhere;
+    }
+    .empty {
+      color: var(--muted);
+      background: var(--panel);
+      border: 1px dashed var(--line);
+      border-radius: 6px;
+      padding: 14px;
+    }
+    @media print {
+      body { background: #fff; }
+      .page { max-width: none; padding: 0; }
+      .finding-controls { display: none; }
+      .card, section, table, details.finding { break-inside: avoid; }
+      .summary-indicator { display: none; }
+    }
+    @media (max-width: 820px) {
+      .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .kv { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .finding-title { align-items: flex-start; flex-direction: column; }
+    }
+    @media (max-width: 520px) {
+      .grid, .kv { grid-template-columns: 1fr; }
+      .finding-controls input,
+      .finding-controls select,
+      .finding-controls button,
+      .filter-count { width: 100%; }
+      .filter-count { margin-left: 0; }
+      .page { padding: 22px 14px 40px; }
+      h1 { font-size: 24px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    {{BODY}}
+  </main>
+  <script>
+    (function () {
+      var printState = [];
+      function applyFindingFilters() {
+        var queryInput = document.querySelector('[data-finding-search]');
+        var severityInput = document.querySelector('[data-filter-severity]');
+        var dimensionInput = document.querySelector('[data-filter-dimension]');
+        var countNode = document.querySelector('[data-finding-count]');
+        var query = queryInput ? queryInput.value.trim().toLowerCase() : '';
+        var severity = severityInput ? severityInput.value : '';
+        var dimension = dimensionInput ? dimensionInput.value : '';
+        var visible = 0;
+        document.querySelectorAll('details.finding').forEach(function (item) {
+          var text = (item.getAttribute('data-search') || '').toLowerCase();
+          var matchQuery = !query || text.indexOf(query) !== -1;
+          var matchSeverity = !severity || item.getAttribute('data-severity') === severity;
+          var matchDimension = !dimension || item.getAttribute('data-dimension') === dimension;
+          var show = matchQuery && matchSeverity && matchDimension;
+          item.hidden = !show;
+          if (show) {
+            visible += 1;
+          }
+        });
+        if (countNode) {
+          countNode.textContent = visible + ' 条';
+        }
+      }
+      function setFindings(open) {
+        document.querySelectorAll('details.finding').forEach(function (item) {
+          if (!item.hidden) {
+            item.open = open;
+          }
+        });
+      }
+      document.addEventListener('click', function (event) {
+        if (event.target.matches('[data-expand-findings]')) {
+          setFindings(true);
+        }
+        if (event.target.matches('[data-collapse-findings]')) {
+          setFindings(false);
+        }
+      });
+      document.addEventListener('input', function (event) {
+        if (event.target.matches('[data-finding-search]')) {
+          applyFindingFilters();
+        }
+      });
+      document.addEventListener('change', function (event) {
+        if (event.target.matches('[data-filter-severity], [data-filter-dimension]')) {
+          applyFindingFilters();
+        }
+      });
+      window.addEventListener('beforeprint', function () {
+        printState = Array.prototype.map.call(document.querySelectorAll('details.finding'), function (item) {
+          return item.open;
+        });
+        setFindings(true);
+      });
+      window.addEventListener('afterprint', function () {
+        document.querySelectorAll('details.finding').forEach(function (item, index) {
+          item.open = !!printState[index];
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

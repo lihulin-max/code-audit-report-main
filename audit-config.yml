@@ -1,0 +1,38 @@
+# code-audit-report default configuration
+# Project-level audit-config.yml can override these values.
+
+audit:
+  languages: []
+  changedOnly: false
+  diffBase: ""
+  diffTarget: "HEAD"
+  minScore: 0
+  failOnHigh: false
+  baselinePath: ""
+  excludeDirs:
+    - .git
+    - .svn
+    - .hg
+    - node_modules
+    - vendor
+    - third_party
+    - build
+    - cmake-build-debug
+    - cmake-build-release
+    - out
+    - dist
+    - target
+    - bin
+    - obj
+    - .audit-tools
+    - .venv
+    - venv
+    - __pycache__
+
+report:
+  outputDir: ""
+  redact: false
+
+sca:
+  enabled: true
+  sbomEnabled: true

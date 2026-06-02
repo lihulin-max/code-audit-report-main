@@ -1,0 +1,42 @@
+[
+  {
+    "ruleId": "SEC-COMMAND-EXEC",
+    "languages": ["C++", "C#", "Java", "Python", "PHP", "Shell", "Kotlin", "Lua"],
+    "severity": "高",
+    "dimension": "安全性",
+    "standards": ["OWASP A03 Injection", "CWE-78"],
+    "detection": ["tool", "heuristic", "manual"],
+    "evidenceRequired": ["调用点", "命令来源", "参数校验方式", "执行权限"],
+    "recommendation": "避免 shell 字符串拼接，使用参数数组接口；对可执行文件和参数做白名单校验；记录退出码和 stderr。"
+  },
+  {
+    "ruleId": "SEC-SECRETS",
+    "languages": ["all"],
+    "severity": "高",
+    "dimension": "安全性",
+    "standards": ["OWASP A02 Cryptographic Failures", "CWE-798"],
+    "detection": ["gitleaks", "semgrep", "manual"],
+    "evidenceRequired": ["疑似密钥位置", "密钥类型", "是否仍有效"],
+    "recommendation": "移除硬编码密钥，使用密钥管理系统或环境注入；轮换已暴露凭据。"
+  },
+  {
+    "ruleId": "SEC-PATH-TRAVERSAL",
+    "languages": ["Java", "C#", "Python", "PHP", "C++", "Kotlin"],
+    "severity": "中",
+    "dimension": "安全性",
+    "standards": ["OWASP A01 Broken Access Control", "CWE-22"],
+    "detection": ["tool", "manual"],
+    "evidenceRequired": ["路径拼接点", "输入来源", "规范化/根目录校验"],
+    "recommendation": "规范化路径后检查是否仍位于允许根目录；拒绝绝对路径和上级目录跳转。"
+  },
+  {
+    "ruleId": "SEC-UNSAFE-DESERIALIZATION",
+    "languages": ["Java", "C#", "Python", "PHP"],
+    "severity": "高",
+    "dimension": "安全性",
+    "standards": ["OWASP A08 Software and Data Integrity Failures", "CWE-502"],
+    "detection": ["semgrep", "manual"],
+    "evidenceRequired": ["反序列化 API", "输入来源", "类型白名单"],
+    "recommendation": "避免对不可信输入做原生对象反序列化；使用安全格式和显式 schema。"
+  }
+]

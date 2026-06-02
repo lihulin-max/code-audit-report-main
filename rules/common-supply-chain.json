@@ -1,0 +1,22 @@
+[
+  {
+    "ruleId": "SCA-VULNERABLE-DEPENDENCY",
+    "languages": ["all"],
+    "severity": "高",
+    "dimension": "依赖与供应链风险",
+    "standards": ["OWASP A06 Vulnerable and Outdated Components", "SLSA"],
+    "detection": ["osv-scanner", "trivy", "grype", "dependency-check", "manual"],
+    "evidenceRequired": ["依赖名", "版本", "漏洞编号", "可达性或使用场景"],
+    "recommendation": "升级到修复版本；无法升级时记录补偿控制、不可达性证据和例外有效期。"
+  },
+  {
+    "ruleId": "SCA-SBOM-LOCKFILE",
+    "languages": ["all"],
+    "severity": "低",
+    "dimension": "依赖与供应链风险",
+    "standards": ["SLSA", "CycloneDX", "SPDX"],
+    "detection": ["manual", "syft", "trivy"],
+    "evidenceRequired": ["依赖清单", "锁文件", "SBOM", "扫描记录"],
+    "recommendation": "为发布产物生成 SBOM，保留锁文件或固定版本约束，并在 CI 中保存漏洞扫描结果。"
+  }
+]

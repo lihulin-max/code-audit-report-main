@@ -1,0 +1,22 @@
+[
+  {
+    "ruleId": "PY-SUBPROCESS-SHELL",
+    "languages": ["Python"],
+    "severity": "高",
+    "dimension": "安全性",
+    "standards": ["PEP 8", "Bandit B602", "CWE-78"],
+    "detection": ["bandit", "semgrep", "manual"],
+    "evidenceRequired": ["subprocess 调用", "shell 参数", "输入来源"],
+    "recommendation": "subprocess 使用参数列表并设置 shell=False；对外部输入做白名单校验。"
+  },
+  {
+    "ruleId": "PY-UNSAFE-YAML",
+    "languages": ["Python"],
+    "severity": "高",
+    "dimension": "安全性",
+    "standards": ["Bandit B506", "CWE-502"],
+    "detection": ["bandit", "manual"],
+    "evidenceRequired": ["yaml.load 调用", "Loader 类型", "输入来源"],
+    "recommendation": "使用 yaml.safe_load 或显式安全 Loader。"
+  }
+]

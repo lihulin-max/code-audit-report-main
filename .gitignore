@@ -1,0 +1,32 @@
+.tmp*/
+*.tmp
+*.log
+*.bak
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Generated audit outputs
+audit.json
+audit-report.html
+reports/
+审计报告/
+.audit-output/
+logs/
+history/
+*.sbom.cdx.json
+*.inventory.json
+*.audit.json
+*.audit.html
+
+# Tool caches
+.audit-tools/
+.pytest_cache/
+.ruff_cache/
+node_modules/
+vendor/
+
+# Local editor/config noise
+.idea/
+.vscode/

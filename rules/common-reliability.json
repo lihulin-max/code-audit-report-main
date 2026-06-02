@@ -1,0 +1,32 @@
+[
+  {
+    "ruleId": "REL-TIMEOUT",
+    "languages": ["all"],
+    "severity": "中",
+    "dimension": "可靠性/健壮性",
+    "standards": ["Google production readiness", "Microsoft reliability guidance"],
+    "detection": ["heuristic", "manual"],
+    "evidenceRequired": ["等待点", "取消/超时策略", "失败恢复路径"],
+    "recommendation": "所有外部 I/O、队列等待、锁等待和远程调用必须有超时、取消和可观测日志。"
+  },
+  {
+    "ruleId": "REL-DETACHED-LIFECYCLE",
+    "languages": ["C++", "C#", "Java", "Kotlin", "Python"],
+    "severity": "中",
+    "dimension": "可靠性/健壮性",
+    "standards": ["C++ Core Guidelines CP.*", "Microsoft async guidance"],
+    "detection": ["heuristic", "manual"],
+    "evidenceRequired": ["任务创建点", "关闭流程", "异常处理方式"],
+    "recommendation": "关键后台任务必须由 scope/group/observer 管理生命周期，关闭时等待完成并收集异常。"
+  },
+  {
+    "ruleId": "REL-GLOBAL-MUTABLE-STATE",
+    "languages": ["all"],
+    "severity": "中",
+    "dimension": "可维护性/可演进性",
+    "standards": ["Google style guides", "Alibaba Java Manual", "Microsoft design guidelines"],
+    "detection": ["heuristic", "manual"],
+    "evidenceRequired": ["全局状态定义", "写入点", "同步策略"],
+    "recommendation": "收敛到上下文对象或依赖注入容器；跨线程访问必须有明确同步或消息串行化策略。"
+  }
+]

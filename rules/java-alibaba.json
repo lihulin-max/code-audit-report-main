@@ -1,0 +1,22 @@
+[
+  {
+    "ruleId": "JAVA-EXCEPTION-LOGGING",
+    "languages": ["Java"],
+    "severity": "中",
+    "dimension": "编码规范性",
+    "standards": ["Alibaba Java Development Manual"],
+    "detection": ["PMD", "SpotBugs", "manual"],
+    "evidenceRequired": ["catch 代码块", "日志和处理逻辑"],
+    "recommendation": "不要捕获后不处理；日志需包含业务上下文，避免重复记录同一异常。"
+  },
+  {
+    "ruleId": "JAVA-COLLECTION-CONCURRENCY",
+    "languages": ["Java"],
+    "severity": "中",
+    "dimension": "可靠性/健壮性",
+    "standards": ["Alibaba Java Development Manual"],
+    "detection": ["SpotBugs", "manual"],
+    "evidenceRequired": ["集合类型", "并发访问点", "同步策略"],
+    "recommendation": "并发场景使用并发容器或显式同步；避免在遍历时修改普通集合。"
+  }
+]

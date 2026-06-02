@@ -1,0 +1,22 @@
+[
+  {
+    "ruleId": "OBS-ERROR-CONTEXT",
+    "languages": ["all"],
+    "severity": "中",
+    "dimension": "可观测性与运维性",
+    "standards": ["SRE production readiness", "Microsoft logging guidance"],
+    "detection": ["manual", "heuristic"],
+    "evidenceRequired": ["错误处理点", "日志字段", "请求/任务上下文", "定位方式"],
+    "recommendation": "关键异常日志应包含操作名、对象标识、状态、错误码、异常类型和恢复动作；避免只输出泛化错误。"
+  },
+  {
+    "ruleId": "OBS-RUNTIME-SIGNALS",
+    "languages": ["all"],
+    "severity": "低",
+    "dimension": "可观测性与运维性",
+    "standards": ["SRE monitoring", "OpenTelemetry semantic conventions"],
+    "detection": ["manual"],
+    "evidenceRequired": ["关键路径", "指标/告警", "健康检查", "审计日志"],
+    "recommendation": "为启动、停止、外部依赖失败、重试、降级和关键业务状态提供指标、健康检查或审计日志。"
+  }
+]

@@ -1,0 +1,7 @@
+interface:
+  display_name: "Code Audit Report"
+  short_description: "Audit code and generate an HTML report."
+  default_prompt: "Use $code-audit-report to audit this repository and generate a deliverable HTML report."
+
+policy:
+  allow_implicit_invocation: true
