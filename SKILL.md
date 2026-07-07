@@ -49,10 +49,13 @@ Use structured rule packs when they match the project:
 - Common observability/operations: `rules/common-observability.json`
 - Common supply chain: `rules/common-supply-chain.json`
 - C++/Google/Core Guidelines: `rules/cpp-google-core.json`
+- C/C++/embedded numeric boundaries: `rules/cpp-numeric-boundaries.json`
 - Java/Alibaba: `rules/java-alibaba.json`
 - Python/PEP 8/Bandit: `rules/python-pep8-bandit.json`
 
 Rule packs are evidence guides, not automatic truth. Tool findings and heuristic findings still need source-context review before final report.
+
+For C, C++, and embedded projects, always load `references/language-cpp.md` and `rules/cpp-numeric-boundaries.json`, and explicitly review numeric boundaries around buffers, protocol frames, parsed fields, counters, offsets, file/database sizes, and fixed binary structures.
 
 ## Workflow
 
@@ -119,6 +122,7 @@ Each finding should include:
 - Coding standards: naming, comments, complexity, method/class size, exception handling, resource release, magic numbers, duplicated code, language-specific conventions.
 - Security: OWASP Top 10, CWE patterns, auth/authz, injection, XSS, SSRF, path traversal, unsafe deserialization, secret leakage, insecure crypto.
 - Reliability: null/bounds checks, edge cases, idempotency, concurrency, timeouts, retries, fallback behavior, observability, failure cleanup.
+- C/C++/embedded numeric boundaries: length/capacity consistency, bounded memory/string/allocation APIs, signed/unsigned and width conversions, shift ranges, array indexes, `length - 1` underflow, protocol frame minimum/maximum lengths, BCD/time/offset/file-size/database-count limits, parser failure/overflow, and fixed-structure compatibility.
 - Maintainability/evolvability: single responsibility, testability, dependency injection, abstraction quality, configuration, documentation, technical debt.
 - Observability/operations: logs, metrics, traces, error codes, alerts, audit logs, health checks, runtime state exposure.
 - Performance: database access patterns, algorithmic complexity, memory/resource lifecycle, cache usage, blocking calls, large-object handling.

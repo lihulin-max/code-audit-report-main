@@ -1,0 +1,82 @@
+[
+  {
+    "ruleId": "CPP-NUM-001-LENGTH-CAPACITY",
+    "languages": ["C", "C++", "Embedded C", "Embedded C++"],
+    "severity": "高",
+    "dimension": "安全性/可靠性",
+    "standards": ["CWE-120", "CWE-131", "CERT C ARR30-C", "CERT C STR31-C"],
+    "detection": ["manual", "clang-tidy", "cppcheck", "semgrep"],
+    "evidenceRequired": ["长度字段来源", "目标缓冲区容量", "剩余可读/可写字节", "拒绝超限输入的分支"],
+    "recommendation": "核对所有外部长度、协议长度、结构体长度和数组容量的一致性；在复制、解析、迭代和分配前同时校验最小长度、最大长度和剩余空间。"
+  },
+  {
+    "ruleId": "CPP-NUM-002-BOUNDED-MEMORY-APIS",
+    "languages": ["C", "C++", "Embedded C", "Embedded C++"],
+    "severity": "高",
+    "dimension": "安全性",
+    "standards": ["CWE-120", "CWE-121", "CWE-122", "CWE-190", "CERT C MEM35-C"],
+    "detection": ["manual", "clang-tidy", "cppcheck", "semgrep"],
+    "evidenceRequired": ["危险 API 调用点", "目标容量计算", "拷贝/格式化/分配上限", "分配大小乘法溢出检查"],
+    "recommendation": "对 memcpy/memmove/strcpy/strncpy/strcat/sprintf/snprintf/malloc/calloc/realloc 等调用使用来自目标容量的上限；分配大小涉及 count * size 时先做溢出检查。"
+  },
+  {
+    "ruleId": "CPP-NUM-003-INTEGER-CONVERSION-SHIFT",
+    "languages": ["C", "C++", "Embedded C", "Embedded C++"],
+    "severity": "中",
+    "dimension": "功能正确性/可靠性",
+    "standards": ["CWE-190", "CWE-191", "CWE-681", "CERT C INT30-C", "CERT C INT31-C", "CERT C INT34-C"],
+    "detection": ["manual", "clang-tidy", "cppcheck", "compiler-warnings"],
+    "evidenceRequired": ["转换前类型和值域", "转换后类型和值域", "比较/运算语义变化", "移位位数范围"],
+    "recommendation": "审查 int/unsigned/size_t/uint32_t/uint64_t/enum/协议字段之间的转换，避免截断、符号扩展、回绕和比较语义变化；移位前校验位数小于类型宽度并确认 signedness。"
+  },
+  {
+    "ruleId": "CPP-NUM-004-INDEX-UNDERFLOW",
+    "languages": ["C", "C++", "Embedded C", "Embedded C++"],
+    "severity": "高",
+    "dimension": "安全性/可靠性",
+    "standards": ["CWE-125", "CWE-787", "CWE-191", "CERT C ARR30-C"],
+    "detection": ["manual", "clang-tidy", "cppcheck", "tests"],
+    "evidenceRequired": ["数组或指针访问点", "索引和值域来源", "零长度路径", "边界测试用例"],
+    "recommendation": "检查数组下标、指针偏移、循环计数器、length - 1、count - 1、递减循环和反向遍历；在零长度和最小长度输入下不得发生无符号下溢或越界访问。"
+  },
+  {
+    "ruleId": "CPP-NUM-005-PROTOCOL-FRAME-BOUNDS",
+    "languages": ["C", "C++", "Embedded C", "Embedded C++"],
+    "severity": "高",
+    "dimension": "功能正确性/安全性",
+    "standards": ["CWE-20", "CWE-130", "CWE-805", "CERT C ARR38-C"],
+    "detection": ["manual", "fuzzing", "tests", "semgrep"],
+    "evidenceRequired": ["协议帧格式", "字段读取前最小长度校验", "声明长度与剩余字节一致性", "最大帧长限制"],
+    "recommendation": "解析协议帧时，读取每个头部、TLV、payload、校验码前先验证最小长度；分配、复制、循环前验证最大长度以及声明长度不超过剩余字节。"
+  },
+  {
+    "ruleId": "CPP-NUM-006-DOMAIN-NUMERIC-FIELDS",
+    "languages": ["C", "C++", "Embedded C", "Embedded C++"],
+    "severity": "中",
+    "dimension": "功能正确性/可靠性",
+    "standards": ["CWE-20", "CWE-682", "CERT C INT30-C"],
+    "detection": ["manual", "tests"],
+    "evidenceRequired": ["字段含义和单位", "业务或协议取值范围", "异常值/哨兵值处理", "越界输入测试"],
+    "recommendation": "对 BCD、日期时间、时区、持续时间、偏移、文件大小、扇区/块号、数据库 count、分页大小和硬件寄存器字段检查文档化的上下界、单位换算和异常值处理。"
+  },
+  {
+    "ruleId": "CPP-NUM-007-PARSER-FAILURE-OVERFLOW",
+    "languages": ["C", "C++", "Embedded C", "Embedded C++"],
+    "severity": "中",
+    "dimension": "安全性/功能正确性",
+    "standards": ["CWE-20", "CWE-190", "CWE-252", "CERT C ERR34-C"],
+    "detection": ["manual", "clang-tidy", "cppcheck", "tests"],
+    "evidenceRequired": ["解析 API 调用点", "返回值/errno/endptr 检查", "目标类型范围", "失败分支"],
+    "recommendation": "避免直接信任 atoi/atol/sscanf/自定义解析结果；校验返回项数、errno、endptr、进制、符号、空白、部分输入和溢出，解析失败必须进入明确错误路径。"
+  },
+  {
+    "ruleId": "CPP-NUM-008-FIXED-STRUCT-COMPATIBILITY",
+    "languages": ["C", "C++", "Embedded C", "Embedded C++"],
+    "severity": "中",
+    "dimension": "架构合理性/可维护性",
+    "standards": ["CWE-665", "CWE-704", "CERT C EXP42-C"],
+    "detection": ["manual", "tests", "binary-compatibility-review"],
+    "evidenceRequired": ["固定结构体或记录定义", "版本/长度/保留字段策略", "pack/alignment/endianness 约束", "新旧版本兼容测试"],
+    "recommendation": "固定结构体、协议记录、共享内存、EEPROM/Flash 布局和磁盘记录扩展后，检查 sizeof 假设、对齐填充、大小端、保留字段、版本号、缺省值和向后兼容读取。"
+  }
+]

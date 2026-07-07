@@ -55,6 +55,7 @@ code-audit-report/
     common-reliability.json
     common-supply-chain.json
     cpp-google-core.json
+    cpp-numeric-boundaries.json
     java-alibaba.json
     python-pep8-bandit.json
   sca/
