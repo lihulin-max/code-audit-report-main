@@ -306,3 +306,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\render-report.ps1 
 - 工具输出不能直接等同于最终结论，需要人工复核误报。
 - 缺少构建环境、测试环境、硬件设备或权限时，应在报告中列为限制项。
 - 审计过程不应静默修改业务代码、生产配置、依赖版本或 CI 文件。
+
+## 许可证
+
+本项目使用 MIT License。详见 [LICENSE](LICENSE)。
