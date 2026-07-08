@@ -152,6 +152,16 @@ if (Has-Language @("shell", "bash", "sh", "zsh")) {
   }
 }
 
+if (Has-Language @("powershell", "ps1", "psm1")) {
+  Ensure-Tool "Invoke-ScriptAnalyzer" {
+    if (Test-Command "Install-Module") {
+      Install-Module -Name PSScriptAnalyzer -Scope CurrentUser -Force -AllowClobber
+    } else {
+      throw "未找到 Install-Module；请安装 PSScriptAnalyzer 后重试。"
+    }
+  }
+}
+
 if (Has-Language @("kotlin", "kt")) {
   Ensure-Tool "java" { throw "请先安装 JDK，或使用项目配置的 JDK。" }
   Ensure-Tool "gradle" { throw "未找到 Gradle。建议使用项目 Gradle Wrapper，或安装 Gradle 后重试。" }

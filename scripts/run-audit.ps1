@@ -247,7 +247,7 @@ function Find-LineMatches {
     }
     $full = Join-Path $Root ([string]$src.path)
     try {
-      $lines = Get-Content -LiteralPath $full -ErrorAction Stop
+      $lines = Get-Content -LiteralPath $full -Encoding UTF8 -ErrorAction Stop
     } catch {
       continue
     }
@@ -255,6 +255,9 @@ function Find-LineMatches {
       $text = [string]$lines[$i]
       $trimmed = $text.Trim()
       if ($trimmed.StartsWith("//") -or $trimmed.StartsWith("#")) {
+        continue
+      }
+      if ($trimmed -match 'Find-LineMatches' -and $trimmed -match '-Pattern') {
         continue
       }
       if ($regex.IsMatch($text)) {
@@ -475,6 +478,55 @@ function Get-ScaSummaryFromFile {
     $summary.note = "无法解析 $Tool 输出：$($_.Exception.Message)"
   }
   return $summary
+}
+
+function Import-RulePacks {
+  param([string]$RulesDir)
+  $index = @{}
+  $packs = New-Object System.Collections.Generic.List[object]
+  if ([string]::IsNullOrWhiteSpace($RulesDir) -or -not (Test-Path -LiteralPath $RulesDir)) {
+    return [ordered]@{ index = $index; packs = @() }
+  }
+  foreach ($file in (Get-ChildItem -LiteralPath $RulesDir -Filter "*.json" -File | Sort-Object Name)) {
+    try {
+      $rules = @(Get-Content -Raw -LiteralPath $file.FullName -Encoding UTF8 | ConvertFrom-Json)
+      $packs.Add([ordered]@{ path = $file.FullName; name = $file.Name; rules = $rules.Count; status = "loaded" }) | Out-Null
+      foreach ($rule in $rules) {
+        $ruleId = [string]$rule.ruleId
+        if (-not [string]::IsNullOrWhiteSpace($ruleId)) {
+          $index[$ruleId] = $rule
+        }
+      }
+    } catch {
+      $packs.Add([ordered]@{ path = $file.FullName; name = $file.Name; rules = 0; status = "failed"; error = $_.Exception.Message }) | Out-Null
+    }
+  }
+  return [ordered]@{ index = $index; packs = @($packs.ToArray()) }
+}
+
+function Get-RuleMetadata {
+  param(
+    [hashtable]$RuleIndex,
+    [string]$RuleId,
+    [string]$DefaultSeverity,
+    [string]$DefaultDimension,
+    [string]$DefaultRecommendation
+  )
+  if ($null -ne $RuleIndex -and $RuleIndex.ContainsKey($RuleId)) {
+    $rule = $RuleIndex[$RuleId]
+    return [ordered]@{
+      severity = if (-not [string]::IsNullOrWhiteSpace([string]$rule.severity)) { [string]$rule.severity } else { $DefaultSeverity }
+      dimension = if (-not [string]::IsNullOrWhiteSpace([string]$rule.dimension)) { [string]$rule.dimension } else { $DefaultDimension }
+      recommendation = if (-not [string]::IsNullOrWhiteSpace([string]$rule.recommendation)) { [string]$rule.recommendation } else { $DefaultRecommendation }
+      source = "rulepack"
+    }
+  }
+  return [ordered]@{
+    severity = $DefaultSeverity
+    dimension = $DefaultDimension
+    recommendation = $DefaultRecommendation
+    source = "heuristic"
+  }
 }
 
 function Resolve-AuditPath {
@@ -729,6 +781,8 @@ if ([string]::IsNullOrWhiteSpace($ConfigPath)) {
   }
 }
 $config = Read-AuditConfig -Path $ConfigPath
+$rulePackState = Import-RulePacks -RulesDir (Join-Path $skillRoot "rules")
+$ruleIndex = $rulePackState.index
 
 if ($Languages.Count -eq 0) {
   $configuredLanguages = Get-ConfigValue -Config $config -Path "audit.languages" -Default @()
@@ -844,13 +898,25 @@ if (-not $SkipExternalTools) {
     $cppcheckOut = Join-Path $outputFullDir "cppcheck.txt"
     $tools.Add((Invoke-AuditCommand -Name "cppcheck" -Command "cppcheck" -Arguments @("--enable=warning,style,performance,portability", "--inline-suppr", "--quiet", $projectFullPath) -OutputPath $cppcheckOut)) | Out-Null
   }
+  if ($Languages -contains "PowerShell") {
+    if (Test-Command "Invoke-ScriptAnalyzer") {
+      $pssaOut = Join-Path $outputFullDir "psscriptanalyzer.txt"
+      $tools.Add((Invoke-AuditCommand -Name "PSScriptAnalyzer" -Command "Invoke-ScriptAnalyzer" -Arguments @("-Path", $projectFullPath, "-Recurse") -OutputPath $pssaOut)) | Out-Null
+    } else {
+      $tools.Add((New-ToolRecord -Name "PSScriptAnalyzer" -Status "missing" -Command "Invoke-ScriptAnalyzer -Path <project> -Recurse" -Summary "未找到 PSScriptAnalyzer，跳过 PowerShell 静态分析。")) | Out-Null
+    }
+  }
   if (Test-Command "gitleaks") {
     $gitleaksOut = Join-Path $outputFullDir "gitleaks.json"
     $tools.Add((Invoke-AuditCommand -Name "gitleaks" -Command "gitleaks" -Arguments @("detect", "--source", $projectFullPath, "--no-git", "--redact", "--report-format", "json", "--report-path", $gitleaksOut))) | Out-Null
+  } else {
+    $tools.Add((New-ToolRecord -Name "gitleaks" -Status "missing" -Command "gitleaks detect --source <project>" -Summary "未找到 gitleaks，跳过密钥泄露扫描。")) | Out-Null
   }
   if (Test-Command "semgrep") {
     $semgrepOut = Join-Path $outputFullDir "semgrep.json"
     $tools.Add((Invoke-AuditCommand -Name "semgrep" -Command "semgrep" -Arguments @("scan", "--quiet", "--json", "--output", $semgrepOut, $projectFullPath))) | Out-Null
+  } else {
+    $tools.Add((New-ToolRecord -Name "semgrep" -Status "missing" -Command "semgrep scan --json <project>" -Summary "未找到 semgrep，跳过通用静态安全规则扫描。")) | Out-Null
   }
 }
 
@@ -930,6 +996,21 @@ if ($ChangedOnly) {
   }
 }
 
+if (-not $SkipExternalTools) {
+  $missingKeyTools = @($tools.ToArray() | Where-Object {
+      [string]$_["status"] -eq "missing" -and @("semgrep", "gitleaks", "PSScriptAnalyzer", "trivy", "grype", "osv-scanner", "syft") -contains [string]$_["name"]
+    })
+  if ($missingKeyTools.Count -gt 0) {
+    $missingText = ($missingKeyTools | ForEach-Object { "$($_["name"]): $($_["summary"])" }) -join "; "
+    Add-Finding -Findings $findings -RuleId "GEN-TOOL-COVERAGE-001" -Title "关键审计工具缺失，自动审计覆盖度不足" -Severity "中" -Dimension "测试质量" -Priority "P1" -Confidence "高" `
+      -Matches @([ordered]@{ location = $projectFullPath; text = $missingText }) `
+      -Impact "关键静态分析、密钥扫描、依赖漏洞扫描或 SBOM 工具缺失时，报告不能证明相关风险已经被覆盖；如果仍给出满分，会高估审计可信度。" `
+      -Recommendation "在本机或 CI 中安装并固定 semgrep、gitleaks、PSScriptAnalyzer、trivy/grype/osv-scanner、syft 等关键工具；无法安装时应在报告中形成待复核项或降低评分，并说明未覆盖范围。" `
+      -AffectedComponent "工具覆盖/审计门禁" -RemediationEffort "中" -Source "tool-coverage" `
+      -ConfidenceReason "基于本次审计工具记录中的 missing 状态生成。"
+  }
+}
+
 Add-Finding -Findings $findings -RuleId "CPP-SEC-001" -Title "外部命令通过字符串拼接执行，存在命令注入和执行边界风险" -Severity "高" -Dimension "安全性" -Priority "P0" -Confidence "高" `
   -Matches (Find-LineMatches -Root $projectFullPath -SourceFiles $sourceFiles -Languages @("C++") -Pattern 'std::system\s*\(|(?<!::)\bsystem\s*\(' -MaxExamples 5) `
   -Impact "当命令字符串包含路径、工具名或参数且未做白名单校验/转义时，攻击者或异常配置可能改变命令语义，导致任意命令执行、日志导出失败或权限边界扩大。" `
@@ -944,10 +1025,19 @@ Add-Finding -Findings $findings -RuleId "CPP-SEC-002" -Title "代码直接调用
   -Cwe "CWE-78" -AffectedComponent "设备探测" -RemediationEffort "中"
 
 Add-Finding -Findings $findings -RuleId "GEN-SEC-EXEC-001" -Title "动态执行或外部进程调用需要校验输入、超时和权限边界" -Severity "高" -Dimension "安全性" -Priority "P0" -Confidence "中" `
-  -Matches (Find-LineMatches -Root $projectFullPath -SourceFiles $sourceFiles -Languages @("Java", "C#", "Shell", "Python", "PHP", "Kotlin", "Lua", "JavaScript", "TypeScript", "BAT/CMD", "Go") -Pattern 'Runtime\.getRuntime\(\)\.exec|ProcessBuilder\s*\(|subprocess\.(Popen|run|call|check_output)\s*\(.*shell\s*=\s*True|os\.system\s*\(|child_process\.(exec|execSync)\s*\(|shell_exec\s*\(|passthru\s*\(|proc_open\s*\(|eval\s*\(|Function\s*\(|loadstring\s*\(|io\.popen\s*\(' -MaxExamples 8) `
+  -Matches (Find-LineMatches -Root $projectFullPath -SourceFiles $sourceFiles -Languages @("Java", "C#", "Shell", "PowerShell", "Python", "PHP", "Kotlin", "Lua", "JavaScript", "TypeScript", "BAT/CMD", "Go") -Pattern 'Runtime\.getRuntime\(\)\.exec|ProcessBuilder\s*\(|subprocess\.(Popen|run|call|check_output)\s*\(.*shell\s*=\s*True|os\.system\s*\(|child_process\.(exec|execSync)\s*\(|shell_exec\s*\(|passthru\s*\(|proc_open\s*\(|eval\s*\(|Function\s*\(|loadstring\s*\(|io\.popen\s*\(|Invoke-Expression\b|\biex\b|Start-Process\b|Invoke-Command\b|&\s*\$[A-Za-z_][A-Za-z0-9_]*' -MaxExamples 8) `
   -Impact "动态执行入口一旦拼接了用户输入、环境变量或配置值，可能导致命令注入、权限越界或脚本执行链路失控。" `
   -Recommendation "改用参数数组或受控 API；对可执行名、参数、工作目录和环境变量做白名单校验；加入超时、退出码、stderr 记录和失败降级；必要时降低运行权限。" `
   -Cwe "CWE-78" -Owasp "A03:2021 Injection" -AffectedComponent "跨语言动态执行入口" -RemediationEffort "中"
+
+$numericIndexRule = Get-RuleMetadata -RuleIndex $ruleIndex -RuleId "NUM-004-INDEX-SLICE-UNDERFLOW" -DefaultSeverity "高" -DefaultDimension "可靠性/健壮性" -DefaultRecommendation "检查数组、列表、map、字符串、切片和 PowerShell 数组访问；重点复核 length - 1、count - 1、负索引、反向循环和空集合访问。"
+$codeLanguages = @("PowerShell", "C++", "C#", "Java", "Shell", "Python", "PHP", "Kotlin", "Lua", "JavaScript", "TypeScript", "BAT/CMD", "Go", "Blazor")
+Add-Finding -Findings $findings -RuleId "NUM-004-INDEX-SLICE-UNDERFLOW" -Title "索引、切片或 length/count 运算存在边界下溢风险" -Severity ([string]$numericIndexRule.severity) -Dimension "可靠性/健壮性" -Priority "P1" -Confidence "中" `
+  -Matches (Find-LineMatches -Root $projectFullPath -SourceFiles $sourceFiles -Languages $codeLanguages -Pattern 'Substring\s*\([^`r`n]*(\.Length|\.Count)\s*-\s*\d+|(\.Length|\.Count)\s*-\s*1|\[\s*[^\]`r`n]*(\.Length|\.Count)\s*-\s*1\s*\]' -MaxExamples 10) `
+  -Impact "当输入为空、长度不足或集合为空时，length/count 减法、切片和下标访问可能触发运行时异常、越界读取、错误截断或拒绝服务。" `
+  -Recommendation ([string]$numericIndexRule.recommendation) `
+  -Cwe "CWE-129, CWE-191" -AffectedComponent "通用数值边界/索引切片" -RemediationEffort "低" -Source ([string]$numericIndexRule.source) `
+  -ConfidenceReason "基于 common-numeric-boundaries 规则包和源码启发式命中；需结合输入前置校验确认可达性。"
 
 Add-Finding -Findings $findings -RuleId "GEN-WEB-XSS-001" -Title "页面直接写入 HTML 或绕过编码，需要复核 XSS 防护" -Severity "中" -Dimension "安全性" -Priority "P1" -Confidence "中" `
   -Matches (Find-LineMatches -Root $projectFullPath -SourceFiles $sourceFiles -Languages @("JavaScript", "TypeScript", "PHP", "Blazor", "HTML") -Pattern 'innerHTML\s*=|outerHTML\s*=|document\.write\s*\(|dangerouslySetInnerHTML|v-html|@Html\.Raw|MarkupString' -MaxExamples 8) `
@@ -1106,16 +1196,28 @@ if ($high -gt 0) {
 if ($medium -gt 0) {
   $roadmap += [ordered]@{ priority = "P1"; action = "补齐超时、生命周期、异常处理和输入边界校验，增加回归测试。"; owner = "模块负责人"; due = "2 周内" }
 }
-$roadmap += [ordered]@{ priority = "P2"; action = "收敛全局状态、整理 TODO、补齐关键业务 fallback 测试、日志上下文、依赖漏洞扫描和 SBOM。"; owner = "项目维护人"; due = "1 个迭代内" }
+if ($activeFindings.Count -gt 0) {
+  $roadmap += [ordered]@{ priority = "P2"; action = "按报告 finding 补齐自动化测试、工具覆盖、日志上下文和供应链证据，并复测已修复项。"; owner = "项目维护人"; due = "1 个迭代内" }
+} else {
+  $roadmap += [ordered]@{ priority = "P2"; action = "保持工具版本、规则包和测试用例更新，定期复测审计覆盖范围。"; owner = "项目维护人"; due = "持续" }
+}
 
 $scope = @("源代码", "构建文件", "依赖清单", "测试目录", "配置文件", "设计文档线索")
 if ($ChangedOnly) {
   $scope += "Git 增量变更"
 }
-$conclusion = "本次审计覆盖 $($inventory.sourceFileCount) 个源码/配置/文档文件，识别主要语言为 $($Languages -join '、')。总体评分 $totalScore，风险等级 $riskLevel。当前有效问题 $($activeFindings.Count) 个，其中高危 $high 个、中危 $medium 个、低危 $low 个。主要风险集中在外部命令执行边界、异步任务生命周期、AT 命令超时、业务 fallback 正确性、全局可变状态、可观测性和供应链证据完整性。"
+$riskTopicText = "未发现当前规则命中的有效问题。"
+if ($activeFindings.Count -gt 0) {
+  $topIssues = @($activeFindings | Select-Object -First 5 | ForEach-Object { [string]$_["title"] })
+  $riskTopicText = "主要问题包括：" + ($topIssues -join "；") + "。"
+}
+$conclusion = "本次审计覆盖 $($inventory.sourceFileCount) 个源码/配置/文档文件，识别主要语言为 $($Languages -join '、')。总体评分 $totalScore，风险等级 $riskLevel。当前有效问题 $($activeFindings.Count) 个，其中高危 $high 个、中危 $medium 个、低危 $low 个。$riskTopicText"
 
 $limitations = New-Object System.Collections.Generic.List[object]
-$limitations.Add("本次审计以静态审计和启发式规则为主；未在目标嵌入式硬件上执行完整运行时验证。") | Out-Null
+$limitations.Add("本次审计以静态审计和启发式规则为主；未执行完整运行时验证。") | Out-Null
+if ($Languages -contains "C++") {
+  $limitations.Add("若项目依赖目标硬件、嵌入式设备或专用运行环境，相关行为仍需在目标环境复核。") | Out-Null
+}
 $limitations.Add("若本地缺少 cppcheck、semgrep、gitleaks、trivy、grype、osv-scanner、syft 等工具，报告会记录跳过或检测失败，相关结论需在 CI/目标环境复核。") | Out-Null
 $limitations.Add("启发式规则命中的问题已按证据生成，但仍建议结合业务输入来源、权限模型和运行拓扑做最终确认。") | Out-Null
 if ($ChangedOnly -and -not $diffInfo.available) {
@@ -1170,6 +1272,7 @@ $report = [ordered]@{
   diff = $diffInfo
   baseline = $baselineSummary
   sca = $scaSummary
+  rulePacks = @($rulePackState.packs)
   dimensionScores = @($dimensionScores)
   findings = @($findingArray)
   roadmap = $roadmap
