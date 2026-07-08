@@ -50,6 +50,7 @@ code-audit-report/
     language-*.md
   rules/
     common-correctness.json
+    common-numeric-boundaries.json
     common-observability.json
     common-security.json
     common-reliability.json

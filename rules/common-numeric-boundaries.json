@@ -1,0 +1,92 @@
+[
+  {
+    "ruleId": "NUM-001-LENGTH-COUNT-CAPACITY",
+    "languages": ["all"],
+    "severity": "高",
+    "dimension": "安全性/可靠性",
+    "standards": ["CWE-20", "CWE-130", "CWE-131", "CWE-770"],
+    "detection": ["manual", "tests", "fuzzing", "language-linter", "semgrep"],
+    "evidenceRequired": ["数值来源", "目标容量或剩余数据量", "上限/下限校验", "超限失败分支"],
+    "recommendation": "所有语言都要核对 length、size、count、limit、pageSize、capacity 与目标集合、缓冲区、请求体、文件、数据库结果集或分配资源是否一致；进入复制、解析、循环、分配、查询或分页前必须校验最小值、最大值和剩余量。"
+  },
+  {
+    "ruleId": "NUM-002-BOUNDED-COPY-FORMAT-ALLOC",
+    "languages": ["all"],
+    "severity": "高",
+    "dimension": "安全性",
+    "standards": ["CWE-120", "CWE-121", "CWE-122", "CWE-190", "CWE-770"],
+    "detection": ["manual", "language-linter", "semgrep", "tests"],
+    "evidenceRequired": ["拷贝/格式化/分配调用点", "目标容量或资源预算", "最大长度约束", "异常/拒绝路径"],
+    "recommendation": "检查跨语言的复制、格式化、拼接、序列化、分配、读取全部内容和批量查询操作是否有上限；例如 C/C++ 内存 API、Java/C# 数组和集合分配、Python/JS 字符串和列表扩展、PowerShell Get-Content/ConvertFrom-Json 输出规模、SQL LIMIT/OFFSET。"
+  },
+  {
+    "ruleId": "NUM-003-INTEGER-OVERFLOW-PRECISION",
+    "languages": ["all"],
+    "severity": "中",
+    "dimension": "功能正确性/可靠性",
+    "standards": ["CWE-190", "CWE-191", "CWE-681", "CWE-682"],
+    "detection": ["manual", "compiler-warnings", "language-linter", "tests"],
+    "evidenceRequired": ["参与运算的类型和值域", "溢出/精度损失风险", "比较或转换语义", "边界测试"],
+    "recommendation": "审查整数、浮点、decimal、BigInt、时间戳、金额、文件大小、分页游标和 ID 之间的转换与运算，避免溢出、下溢、精度丢失、符号变化、NaN/Infinity、JavaScript Number 安全整数越界和数据库类型截断。"
+  },
+  {
+    "ruleId": "NUM-004-INDEX-SLICE-UNDERFLOW",
+    "languages": ["all"],
+    "severity": "高",
+    "dimension": "安全性/可靠性",
+    "standards": ["CWE-125", "CWE-129", "CWE-191", "CWE-787"],
+    "detection": ["manual", "tests", "fuzzing", "language-linter"],
+    "evidenceRequired": ["索引/切片来源", "集合或字符串长度", "零长度路径", "边界测试"],
+    "recommendation": "检查数组、列表、map、字符串、切片、DataFrame、JSON path、DOM 节点和 PowerShell 数组访问；重点复核 length - 1、count - 1、负索引、闭区间/开区间混用、反向循环、分页 offset 和空集合访问。"
+  },
+  {
+    "ruleId": "NUM-005-PARSER-FAILURE-RANGE",
+    "languages": ["all"],
+    "severity": "中",
+    "dimension": "安全性/功能正确性",
+    "standards": ["CWE-20", "CWE-190", "CWE-252", "CWE-704"],
+    "detection": ["manual", "tests", "fuzzing", "language-linter"],
+    "evidenceRequired": ["解析 API 调用点", "返回值/异常/错误码处理", "目标类型范围", "失败分支"],
+    "recommendation": "不要直接信任 atoi/sscanf、Integer.parseInt、Long.parseLong、Convert.ToInt32、TryParse、strconv.Atoi、parseInt、Number、BigInt、int()/float()、PowerShell [int] 转换、日期解析和自定义解析结果；必须处理失败、部分输入、空白/符号、进制、区域设置、溢出和默认值。"
+  },
+  {
+    "ruleId": "NUM-006-PROTOCOL-REQUEST-FRAME-BOUNDS",
+    "languages": ["all"],
+    "severity": "高",
+    "dimension": "功能正确性/安全性",
+    "standards": ["CWE-20", "CWE-130", "CWE-400", "CWE-770"],
+    "detection": ["manual", "tests", "fuzzing", "api-contract-review"],
+    "evidenceRequired": ["协议/接口格式", "字段读取前最小长度", "声明长度与实际数据一致性", "最大请求/帧/批量限制"],
+    "recommendation": "对 HTTP/gRPC/WebSocket/MQ 消息、二进制协议、CSV/Excel、JSON/XML、TLV、日志文件和导入任务验证最小长度、最大长度、字段数量、嵌套深度、批量大小、超时和剩余数据一致性。"
+  },
+  {
+    "ruleId": "NUM-007-DOMAIN-NUMERIC-FIELDS",
+    "languages": ["all"],
+    "severity": "中",
+    "dimension": "功能正确性/可靠性",
+    "standards": ["CWE-20", "CWE-682", "CWE-843"],
+    "detection": ["manual", "tests", "domain-rule-review"],
+    "evidenceRequired": ["字段含义和单位", "业务/协议/数据库取值范围", "异常值或哨兵值处理", "越界输入测试"],
+    "recommendation": "检查 BCD、日期时间、时区、时长、金额、百分比、坐标、偏移、文件大小、行号、数据库 count、分页参数、重试次数、速率限制、端口号、状态码和硬件/外部系统数值字段的单位、上下界、哨兵值和异常路径。"
+  },
+  {
+    "ruleId": "NUM-008-SCHEMA-STRUCTURE-COMPATIBILITY",
+    "languages": ["all"],
+    "severity": "中",
+    "dimension": "架构合理性/可维护性",
+    "standards": ["CWE-665", "CWE-704", "CWE-843"],
+    "detection": ["manual", "tests", "contract-review", "migration-review"],
+    "evidenceRequired": ["固定结构或 schema 定义", "版本/长度/默认值策略", "新旧版本兼容用例", "迁移/回滚路径"],
+    "recommendation": "固定结构体、API DTO、数据库表、配置 schema、Protobuf/Avro/Thrift 消息、序列化对象、共享缓存键、文件格式和报表字段扩展后，检查版本化、字段默认值、未知字段处理、长度假设、对齐/大小端、迁移和向后兼容。"
+  },
+  {
+    "ruleId": "NUM-009-RESOURCE-LOOP-LIMITS",
+    "languages": ["all"],
+    "severity": "中",
+    "dimension": "性能与资源/可靠性",
+    "standards": ["CWE-400", "CWE-770", "CWE-834"],
+    "detection": ["manual", "tests", "load-test", "language-linter"],
+    "evidenceRequired": ["循环或递归入口", "迭代上限", "资源预算", "超限退出路径"],
+    "recommendation": "审查循环、递归、重试、轮询、批处理、分页抓取、文件遍历、正则匹配和异步任务队列是否有可证明的最大次数、最大耗时、最大内存和取消机制，避免由外部 count/size/depth 驱动的资源耗尽。"
+  }
+]
